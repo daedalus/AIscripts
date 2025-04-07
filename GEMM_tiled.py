@@ -69,29 +69,28 @@ def matrices_are_close(C1, C2, tol=1e-6):
 
 # Example usage:
 if __name__ == "__main__":
-    # Define dimensions for the matrices.
-    M, K, N = 64, 64, 64  # Smaller sizes for a pure Python implementation.
-    
-    # Create two random matrices.
+    parser = argparse.ArgumentParser(description="Matrix multiplication benchmark")
+    parser.add_argument("--size", type=int, default=64, help="Size of square matrices (M=K=N)")
+    parser.add_argument("--tile", type=int, default=16, help="Tile size for optimized GEMM")
+    args = parser.parse_args()
+
+    M = K = N = args.size
+
     A = create_random_matrix(M, K)
     B = create_random_matrix(K, N)
-    
-    # Compute the product using our optimized function.
+
     start_time = time.time()
-    C_opt = gemm_optimized(A, B, tile=16)
+    C_opt = gemm_optimized(A, B, tile=args.tile)
     elapsed_opt = time.time() - start_time
-    
-    # Compute the product using a naive triple loop for verification.
+
     start_time = time.time()
     C_naive = naive_matmul(A, B)
     elapsed_naive = time.time() - start_time
-    
-    # Check that the two results are close.
+
     if matrices_are_close(C_opt, C_naive):
         print("The tiled multiplication result matches the naive implementation.")
     else:
         print("Results differ!")
-    
+
     print(f"Optimized (tiled) implementation time: {elapsed_opt:.6f} seconds")
     print(f"Naive implementation time: {elapsed_naive:.6f} seconds")
-
