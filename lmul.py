@@ -20,28 +20,20 @@ def lmul(a, b):
     a_bits = float_to_bits(a)
     b_bits = float_to_bits(b)
 
-    # Extract sign bits
-    sign_a = a_bits >> 31
-    sign_b = b_bits >> 31
-    sign_res = sign_a ^ sign_b
+    # Combined sign calculation and absolute value masks
+    sign_mask = 0x80000000
+    abs_mask = 0x7FFFFFFF
+    offset = 0x3F780000  # Precomputed constant
 
-    # Remove sign bits to get absolute values
-    a_abs = a_bits & 0x7FFFFFFF
-    b_abs = b_bits & 0x7FFFFFFF
-
-    # Add mantissa+exponent
-    added = a_abs + b_abs
-
-    # Subtract offset (0x3F780000 = float representation of 0.96875)
-    # This depends on the mantissa bit-width. For 3-bit mantissa, offset = 0x3F800000 - 2**(23-3)
-    # But paper suggests fixed value: 0x3F780000
-    offset = 0x3F780000
-    result = added - offset
-
-    # Ensure result is positive and re-apply sign bit
-    result = result & 0x7FFFFFFF
-    if sign_res:
-        result = result | 0x80000000
+    # Efficient sign handling using XOR and shift
+    sign = ((a_bits ^ b_bits) & sign_mask)
+    
+    # Core L-Mul operation
+    result = (
+        ((a_bits & abs_mask) + 
+         (b_bits & abs_mask) - 
+         offset
+        ) & abs_mask | sign)
 
     return bits_to_float(result)
 
