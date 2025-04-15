@@ -1,3 +1,4 @@
+import time
 import os
 import shutil
 import argparse
@@ -33,10 +34,14 @@ Python code:
     }
 
     try:
+        t0 = time.time()
         response = requests.post(endpoint_url, headers=headers, json=payload, timeout=3600)
         response.raise_for_status()
+        rtime = time.time() - t0
         data = response.json()
         reply = data["choices"][0]["message"]["content"]
+        tokens = data["usage"]["completion_tokens"]
+        print(f"Stats: Tokens: {tokens}, time: {round(rtime,2)} sec, tokens/s: {round(tokens/rtime,2)}")
         return json.loads(reply)
     except Exception as e:
         print("Failed to get or parse LLM response:", e)
@@ -54,7 +59,7 @@ def process_directory(base_dir: Path, llm_url: str):
             continue
 
         for filename in files:
-            if filename.endswith(".py"):
+            if filename.endswith(".py") or filename.endswith(".sage"):
                 file_path = Path(root) / filename
                 try:
                     with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
@@ -63,9 +68,16 @@ def process_directory(base_dir: Path, llm_url: str):
                     print(f"Failed to read {file_path}: {e}")
                     continue
 
-                print(f"Processing: {file_path}")
+                suffix = file_path.suffix
+                if suffix == ".py":
+                    ftype = "python"
+                else:
+                    ftype = "sage"
+                print(f"Processing {ftype} script: {file_path}")
+                
                 result = get_llm_response(code, llm_url)
-                new_name = result.get("name", "unnamed_script").strip().replace(" ", "_") + ".py"
+
+                new_name = result.get("name", "unnamed_script").strip().replace(" ", "_") + suffix
                 interest = result.get("interest", "uninteresting").lower()
 
                 target_dir = high_interest_dir if interest == "interesting" else low_interest_dir
