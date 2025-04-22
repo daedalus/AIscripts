@@ -29,6 +29,8 @@
 
   `NoProp.py` - Training Neural Networks without Back-propagation or Forward-propagation.
 
+  `PhyloLM.ipynb` and `phylolm.py` - Inferring the Phylogeny of Large Language Models and Predicting their Performances in Benchmarks.
+
 - **Probabilistic Data Structures**:
 
   `bloomfilter.py` - Classic Bloom filter implementation.
