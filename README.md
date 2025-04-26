@@ -31,6 +31,8 @@
 
   `PhyloLM.ipynb` and `phylolm.py` - Inferring the Phylogeny of Large Language Models and Predicting their Performances in Benchmarks.
 
+  `DLFloat.py` - Lossless LLM Compression for Efficient GPU Inference via Dynamic-Length Float
+
 - **Probabilistic Data Structures**:
 
   `bloomfilter.py` - Classic Bloom filter implementation.
