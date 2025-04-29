@@ -94,10 +94,19 @@ def process_repo(repo_path, output_dir, skip_existing, overwrite_existing, color
         print(colored(f"[{repo_path}] Skipping pull due to saved uncommitted changes.", "yellow", colorize))
     else:
         try:
+            # Get remote URL
+            remote_url = run_git_command(repo_path, ["config", "--get", "remote.origin.url"], capture_output=True, verbose=verbose)
+
+            # Check if reachable using `git ls-remote`
+            run_git_command(repo_path, ["ls-remote", remote_url], capture_output=True, verbose=verbose)
+
+            # If successful, proceed to fetch and pull
             run_git_command(repo_path, ["fetch"], verbose=verbose)
             run_git_command(repo_path, ["pull", "--rebase"], verbose=verbose)
         except subprocess.CalledProcessError:
-            handle_conflict(repo_path, default_branch, colorize, verbose)
+            print(colored(f"[{repo_path}] Remote unreachable or pull failed. Skipping sync.", "yellow", colorize))
+
+
 
     repo_name = os.path.basename(os.path.abspath(repo_path))
     bundle_filename = f"{repo_name}.bundle"
