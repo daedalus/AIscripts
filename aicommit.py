@@ -21,7 +21,7 @@ def get_git_diff(filename=None):
 
 def generate_commit_message(diff_text):
     """Generates a commit message using OpenAI's GPT."""
-    prompt = f"Summarize the following Git diff and generate a brief, concise and meaningful commit message in less than fifty words:\n\n{diff_text}"
+    prompt = f"Summarize the following Git diff and generate a concise and meaningful commit message in less than fifty words:\n\n{diff_text}"
     
     try:
         client = openai.OpenAI(base_url="http://localhost:1234/v1", api_key="not-needed")  # Local LLM
@@ -29,7 +29,7 @@ def generate_commit_message(diff_text):
             model="local-model",  # Not using gpt-4o for local
             messages=[{"role": "system", "content": "You are a helpful assistant skilled in writing Git commit messages."},
                       {"role": "user", "content": prompt}],
-            max_tokens=50,
+            max_tokens=100,
         )
         return response.choices[0].message.content.strip().replace('"','').replace("Commit Message:","")
     except Exception as e:
