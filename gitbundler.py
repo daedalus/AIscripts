@@ -1,8 +1,41 @@
 import os
 import subprocess
 import argparse
-from tqdm import tqdm
 import shutil
+import re
+import urllib.request
+import urllib.error
+from tqdm import tqdm
+
+
+def remote_repo_exists(remote_url, verbose=False):
+    """Check if the Git remote URL is reachable on GitHub or similar."""
+    if remote_url.startswith("git@"):
+        # Convert SSH to HTTPS
+        match = re.match(r"git@([^:]+):(.+?)(\.git)?$", remote_url)
+        if not match:
+            return False
+        domain, path = match.groups()[:2]
+        test_url = f"https://{domain}/{path}"
+    elif remote_url.startswith("https://") or remote_url.startswith("http://"):
+        test_url = re.sub(r"\.git$", "", remote_url)
+    else:
+        return False  # Unsupported remote
+
+    try:
+        req = urllib.request.Request(test_url, method='HEAD')
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            if verbose:
+                print(f"Checked {test_url}: {resp.status}")
+            return 200 <= resp.status < 400
+    except urllib.error.HTTPError as e:
+        if verbose:
+            print(f"HEAD {test_url} failed: HTTP {e.code}")
+        return False
+    except Exception as e:
+        if verbose:
+            print(f"HEAD {test_url} failed: {e}")
+        return False
 
 def run_git_command(repo_path, args, check=True, capture_output=False, verbose=False):
     """Helper to run git commands inside a repository."""
@@ -97,12 +130,13 @@ def process_repo(repo_path, output_dir, skip_existing, overwrite_existing, color
             # Get remote URL
             remote_url = run_git_command(repo_path, ["config", "--get", "remote.origin.url"], capture_output=True, verbose=verbose)
 
-            # Check if reachable using `git ls-remote`
-            run_git_command(repo_path, ["ls-remote", remote_url], capture_output=True, verbose=verbose)
+            # Check if remote URL is reachable
+            if remote_repo_exists(remote_url, verbose=verbose):
+                run_git_command(repo_path, ["fetch"], verbose=verbose)
+                run_git_command(repo_path, ["pull", "--rebase"], verbose=verbose)
+            else:
+                print(colored(f"[{repo_path}] Remote {remote_url} unreachable. Skipping fetch/rebase.", "yellow", colorize))
 
-            # If successful, proceed to fetch and pull
-            run_git_command(repo_path, ["fetch"], verbose=verbose)
-            run_git_command(repo_path, ["pull", "--rebase"], verbose=verbose)
         except subprocess.CalledProcessError:
             print(colored(f"[{repo_path}] Remote unreachable or pull failed. Skipping sync.", "yellow", colorize))
 
