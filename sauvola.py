@@ -1,3 +1,8 @@
+"""
+Based in: https://craftofcoding.wordpress.com/2021/10/06/thresholding-algorithms-sauvola-local/
+"""
+
+
 import numpy as np
 from skimage import io, color, img_as_ubyte
 from skimage.util import img_as_float
